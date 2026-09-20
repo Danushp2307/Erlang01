@@ -34,57 +34,60 @@ main([Arg | _]) ->
 %% Server Mode
 %%--------------------------------------------------------------------
 start_server(K) ->
+    %% Start distributed node if not already alive
     LocalIP = get_local_ip(),
-    init_node(server, LocalIP),
+    init_distributed_node(server, LocalIP),
 
-    io:format("================================================================~n"),
-    io:format("  Distributed Bitcoin Miner (COP5615 Project 1) - SERVER MODE~n"),
-    io:format("================================================================~n"),
-    io:format("Target Leading Zeros (K) : ~p~n", [K]),
-    io:format("GatorLink ID Prefix      : ~s~n", [?DEFAULT_GATOR_ID]),
-    io:format("Work Unit Size           : ~p hashes/request~n", [?DEFAULT_CHUNK_SIZE]),
-    io:format("Server Node Name         : ~p~n", [node()]),
-    io:format("Local IP for Workers     : ~s~n", [LocalIP]),
+    io:format("Server started.~n"), 
+    io:format("K = ~p~n", [K]),
+    io:format("Server node = ~p~n", [node()]),
+    io:format("Server IP = ~s~n", [LocalIP]),
     NumCores = erlang:system_info(schedulers_online),
-    io:format("Local Cores Detected     : ~p~n", [NumCores]),
-    io:format("----------------------------------------------------------------~n"),
-    io:format("Input String\t\t\t\t\t\tSHA-256 Hash~n"),
-    io:format("----------------------------------------------------------------~n"),
 
-    BossPid = spawn(fun() -> boss_init(K, ?DEFAULT_CHUNK_SIZE) end),
-    catch register(boss, BossPid),
+    %% Spawn and register the Boss actor
+    BossPid = spawn(?MODULE, boss_init, [K, ?DEFAULT_CHUNK_SIZE]),
+    register(boss, BossPid),
 
+    %% Spawn local worker actors (1-2 per core for optimal saturation)
     WorkerCount = NumCores * 2,
     spawn_workers(BossPid, WorkerCount),
 
+    %% Start stats reporter process to display performance metrics periodically
     spawn(fun() -> stats_loop(BossPid) end),
+
+    %% Keep server alive
     wait_forever().
 
 %%--------------------------------------------------------------------
-%% Worker Mode
+%% Worker Mode (Runs on remote machines)
 %%--------------------------------------------------------------------
 start_worker(ServerHostOrIP) ->
     LocalIP = get_local_ip(),
     WorkerId = integer_to_list(erlang:unique_integer([positive])),
-    WorkerNodeName = list_to_atom("worker_" ++ WorkerId ++ "@" ++ LocalIP),
-    init_node_custom(WorkerNodeName),
+    WorkerNode = list_to_atom("worker_" ++ WorkerId ++ "@" ++ LocalIP),
 
-    ServerNode = case string:find(ServerHostOrIP, "@") of
-        nomatch -> list_to_atom("server@" ++ ServerHostOrIP);
-        _ -> list_to_atom(ServerHostOrIP)
-    end,
+    init_node_custom(WorkerNode),
+    ServerNode =
+        case string:find(ServerHostOrIP, "@") of
+            nomatch ->
+                list_to_atom("server@" ++ ServerHostOrIP);
+            _ ->
+                list_to_atom(ServerHostOrIP)
+        end,
+
     connect_to_server(ServerNode, 10),
 
     NumCores = erlang:system_info(schedulers_online),
     WorkerCount = NumCores * 2,
-    BossRef = {boss, ServerNode},
-    spawn_workers(BossRef, WorkerCount),
 
-    %% Worker displays nothing to stdout per requirements
+    Boss = {boss, ServerNode},
+    spawn_workers(Boss, WorkerCount),
+
     wait_forever().
 
+
 %%--------------------------------------------------------------------
-%% Boss Logic
+%% Boss Actor Logic
 %%--------------------------------------------------------------------
 boss_init(K, ChunkSize) ->
     net_kernel:monitor_nodes(true),
@@ -95,44 +98,53 @@ boss_init(K, ChunkSize) ->
 boss_loop(NextIndex, K, ChunkSize, TotalCoins, ConnectedNodes) ->
     receive
         {nodeup, Node} ->
-            io:format("~n>>> [CLUSTER EVENT] Remote worker node connected: ~p~n~n", [Node]),
-            NewNodes = [Node | lists:delete(Node, ConnectedNodes)],
-            boss_loop(NextIndex, K, ChunkSize, TotalCoins, NewNodes);
+            io:format("Worker connected: ~p~n", [Node]),
+            Nodes = [Node | lists:delete(Node, ConnectedNodes)],
+            boss_loop(NextIndex, K, ChunkSize, TotalCoins, Nodes);
 
         {nodedown, Node} ->
-            io:format("~n>>> [CLUSTER EVENT] Worker node disconnected: ~p~n~n", [Node]),
-            NewNodes = lists:delete(Node, ConnectedNodes),
-            boss_loop(NextIndex, K, ChunkSize, TotalCoins, NewNodes);
+            io:format("Worker disconnected: ~p~n", [Node]),
+            Nodes = lists:delete(Node, ConnectedNodes),
+            boss_loop(NextIndex, K, ChunkSize, TotalCoins, Nodes);
 
         {get_work, WorkerPid} ->
-            StartIndex = NextIndex,
-            EndIndex = NextIndex + ChunkSize - 1,
-            WorkerPid ! {work, StartIndex, EndIndex, K, ?DEFAULT_GATOR_ID},
-            boss_loop(NextIndex + ChunkSize, K, ChunkSize, TotalCoins, ConnectedNodes);
+            Start = NextIndex,
+            End = Start + ChunkSize - 1,
+            WorkerPid ! {work, Start, End, K, ?DEFAULT_GATOR_ID},
+            boss_loop(NextIndex + ChunkSize, K, ChunkSize,
+                      TotalCoins, ConnectedNodes);
 
         {coin_found, InputStr, HashHex} ->
             io:format("~s\t~s~n", [InputStr, HashHex]),
-            boss_loop(NextIndex, K, ChunkSize, TotalCoins + 1, ConnectedNodes);
+            boss_loop(NextIndex, K, ChunkSize,
+                      TotalCoins + 1, ConnectedNodes);
 
         {get_stats, ReplyTo} ->
             {_, CpuTime} = statistics(runtime),
             {_, RealTime} = statistics(wall_clock),
-            ReplyTo ! {stats_reply, CpuTime, RealTime, TotalCoins, NextIndex, ConnectedNodes},
-            boss_loop(NextIndex, K, ChunkSize, TotalCoins, ConnectedNodes);
+            ReplyTo ! {stats_reply, CpuTime, RealTime,
+                       TotalCoins, NextIndex, ConnectedNodes},
+            boss_loop(NextIndex, K, ChunkSize,
+                      TotalCoins, ConnectedNodes);
 
-        _Other ->
-            boss_loop(NextIndex, K, ChunkSize, TotalCoins, ConnectedNodes)
+        _ ->
+            boss_loop(NextIndex, K, ChunkSize,
+                      TotalCoins, ConnectedNodes)
     end.
 
 %%--------------------------------------------------------------------
-%% Worker Logic
+%% Worker Actor Logic
 %%--------------------------------------------------------------------
 spawn_workers(_Boss, 0) -> ok;
-spawn_workers(Boss, Count) ->
-    spawn(fun() -> worker_loop(Boss) end),
-    spawn_workers(Boss, Count - 1).
+spawn_workers(Boss, Number) ->
+    spawn(?MODULE, worker_init, [Boss]),
+    spawn_workers(Boss, Number - 1).
+
+worker_init(Boss) ->
+    worker_loop(Boss).
 
 worker_loop(Boss) ->
+    %% Request work unit from Boss
     Boss ! {get_work, self()},
     receive
         {work, StartIndex, EndIndex, K, GatorId} ->
@@ -141,45 +153,53 @@ worker_loop(Boss) ->
         stop ->
             ok
     after 10000 ->
+        %% Timeout fallback: retry work request if Boss was temporarily busy
         worker_loop(Boss)
     end.
 
+%% Mine an assigned index range
 mine_range(_Boss, Current, End, _K, _GatorId) when Current > End ->
     ok;
-mine_range(Boss, Current, End, K, GatorId) ->
+
+mine_range(Boss,Current, End, K, GatorId) ->
     Candidate = GatorId ++ ";" ++ integer_to_list(Current, 36),
-    HashBinary = crypto:hash(sha256, Candidate),
-    case has_leading_zeros(HashBinary, K) of
+    Hash = crypto:hash(sha256, Candidate),
+
+    case has_leading_zeros(Hash, K) of
         true ->
-            HashHex = binary_to_hex(HashBinary),
+            HashHex = binary_to_hex(Hash),
             Boss ! {coin_found, Candidate, HashHex};
         false ->
             ok
     end,
-    mine_range(Boss, Current + 1, End, K, GatorId).
 
-%% Fast binary check for K hex zeros
-has_leading_zeros(_, 0) -> true;
-has_leading_zeros(<<0:8, Rest/binary>>, K) when K >= 2 ->
-    has_leading_zeros(Rest, K - 2);
-has_leading_zeros(<<Byte:8, _/binary>>, 1) ->
-    Byte < 16;
-has_leading_zeros(_, _) ->
-    false.
+    mine_range(Boss,Current + 1, End, K, GatorId).
 
+%%--------------------------------------------------------------------
+%% Optimized Binary Leading Zeros Check
+%% Validates K hex zeros directly on raw binary before hex formatting
+%%--------------------------------------------------------------------
+has_leading_zeros(Hash, K) ->
+    HashHex = binary_to_hex(Hash),
+    Prefix = lists:duplicate(K, $0),
+    lists:prefix(Prefix, HashHex).
+
+%% Converts 32-byte binary hash to lowercase hex string
 binary_to_hex(Binary) ->
     [nibble_to_hex(N) || <<N:4>> <= Binary].
 
 nibble_to_hex(N) when N < 10 -> $0 + N;
 nibble_to_hex(N) -> $a + (N - 10).
 
-%% Distributed Node Helpers
-init_node(Role, LocalIP) ->
+%%--------------------------------------------------------------------
+%% Node Initialization & Distributed Networking
+%%--------------------------------------------------------------------
+init_distributed_node(Role, LocalIP) ->
     case node() of
         'nonode@nohost' ->
             NodeName = list_to_atom(atom_to_list(Role) ++ "@" ++ LocalIP),
             init_node_custom(NodeName);
-        _ ->
+        _ExistingNode ->
             erlang:set_cookie(node(), ?COOKIE),
             ok
     end.
@@ -189,73 +209,101 @@ init_node_custom(NodeName) ->
         {ok, _} ->
             erlang:set_cookie(node(), ?COOKIE),
             ok;
-        {error, _} ->
+        {error, _Reason} ->
+            %% Try shortnames if longnames failed (e.g. without FQDN)
             case net_kernel:start([NodeName, shortnames]) of
                 {ok, _} ->
                     erlang:set_cookie(node(), ?COOKIE),
                     ok;
-                {error, _Reason} ->
+                {error, Reason} ->
+                    %% Standalone local node fallback
+                    io:format("[Notice] Operating in local standalone mode: ~p~n", [Reason]),
                     ok
             end
     end.
 
-connect_to_server(_ServerNode, 0) ->
-    io:format("Error: Could not connect to server after multiple attempts.~n"),
+connect_to_server(_, 0) ->
+    io:format("Could not connect to server.~n"),
     halt(1);
-connect_to_server(ServerNode, AttemptsLeft) ->
+
+connect_to_server(ServerNode, Attempts) ->
     case net_adm:ping(ServerNode) of
         pong ->
             ok;
         pang ->
             timer:sleep(1000),
-            connect_to_server(ServerNode, AttemptsLeft - 1)
+            connect_to_server(ServerNode, Attempts - 1)
     end.
 
+%% Discovers local routable IPv4 address
 get_local_ip() ->
     case inet:getifaddrs() of
         {ok, IfList} ->
             case find_valid_ipv4(IfList) of
                 {ok, IP} -> IP;
-                _ -> "127.0.0.1"
+                error -> "127.0.0.1"
             end;
         _ ->
             "127.0.0.1"
     end.
-
 find_valid_ipv4([]) ->
     error;
-find_valid_ipv4([{_IfName, Opts} | Rest]) ->
+
+find_valid_ipv4([{_Name, Opts} | Rest]) ->
     Flags = proplists:get_value(flags, Opts, []),
-    IsUp = lists:member(up, Flags),
-    IsLoopback = lists:member(loopback, Flags),
-    case IsUp andalso not IsLoopback of
+
+    case lists:member(up, Flags) andalso
+         not lists:member(loopback, Flags) of
         true ->
-            Addrs = [Addr || {addr, Addr} <- Opts, is_tuple(Addr), tuple_size(Addr) == 4],
+            Addrs = [IP || {addr, IP} <- Opts,
+                           is_tuple(IP),
+                           tuple_size(IP) == 4],
+
             case filter_routable_ip(Addrs) of
-                {ok, IPStr} -> {ok, IPStr};
+                {ok, IP} -> {ok, IP};
                 error -> find_valid_ipv4(Rest)
             end;
+
         false ->
             find_valid_ipv4(Rest)
     end.
 
-filter_routable_ip([]) -> error;
-filter_routable_ip([{127, _, _, _} | Rest]) -> filter_routable_ip(Rest);
-filter_routable_ip([{169, 254, _, _} | Rest]) -> filter_routable_ip(Rest);
-filter_routable_ip([{A, B, C, D} | _]) ->
-    {ok, lists:flatten(io_lib:format("~p.~p.~p.~p", [A, B, C, D]))}.
+filter_routable_ip([]) ->
+    error;
 
+filter_routable_ip([IP | Rest]) ->
+    case IP of
+        {127, _, _, _} ->
+            filter_routable_ip(Rest);
+
+        {169, 254, _, _} ->
+            filter_routable_ip(Rest);
+
+        {A, B, C, D} ->
+            Address = io_lib:format("~p.~p.~p.~p", [A, B, C, D]),
+            {ok, lists:flatten(Address)}
+    end.
+
+%% Periodically displays CPU time, Real time, and Core Utilization Ratio
 stats_loop(BossPid) ->
     timer:sleep(15000),
     BossPid ! {get_stats, self()},
+
     receive
         {stats_reply, CpuTime, RealTime, CoinsFound, HashesEvaluated, ConnectedNodes} ->
-            Ratio = if RealTime > 0 -> CpuTime / RealTime; true -> 0.0 end,
+            Ratio =
+                case RealTime > 0 of
+                    true -> CpuTime / RealTime;
+                    false -> 0.0
+                end,
+
             io:format("~n>>> [STATS] CPU Time: ~p ms | Real Time: ~p ms | Ratio (CPU/Real): ~.2f | Total Coins: ~p | Hashes Checked: ~p | Connected Nodes: ~p~n~n",
                       [CpuTime, RealTime, Ratio, CoinsFound, HashesEvaluated, ConnectedNodes]);
+
         _ ->
             ok
     end,
+
     stats_loop(BossPid).
 
 wait_forever() ->
