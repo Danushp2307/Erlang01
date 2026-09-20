@@ -1,0 +1,6 @@
+# Erlang crash dumps
+erl_crash.dump
+
+# Temporary files
+*.tmp
+.system_generated/

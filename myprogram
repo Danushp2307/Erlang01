@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# ===================================================================
+# COP5615 Project 1 - Runner Script (Linux / macOS)
+# Usage:
+#    ./myprogram 4               (Start Server with K=4)
+#    ./myprogram 192.168.0.26    (Start Worker pointing to Server IP)
+# ===================================================================
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -z "$1" ]; then
+    echo "Usage:"
+    echo "  Server Mode: ./myprogram <LeadingZeros>   [e.g. ./myprogram 4]"
+    echo "  Worker Mode: ./myprogram <ServerIP>       [e.g. ./myprogram 192.168.0.26]"
+    exit 1
+fi
+
+# Detect local IP
+LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$LOCAL_IP" ]; then
+    LOCAL_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}')
+fi
+if [ -z "$LOCAL_IP" ]; then
+    LOCAL_IP="127.0.0.1"
+fi
+
+# Compile if needed
+if [ ! -f "$DIR/project1.beam" ]; then
+    erlc "$DIR/project1.erl"
+fi
+
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    echo "[Starting Main Server Node on $LOCAL_IP with K=$1...]"
+    erl -name "server@$LOCAL_IP" -setcookie cop5615_cookie -noshell -pa "$DIR" -s project1 main "$@"
+else
+    RAND_ID=$((RANDOM % 90000 + 10000))
+    echo "[Starting Worker Node connecting to server at $1...]"
+    erl -name "worker_${RAND_ID}@$LOCAL_IP" -setcookie cop5615_cookie -noshell -pa "$DIR" -s project1 main "$@"
+fi
