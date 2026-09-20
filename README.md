@@ -3,9 +3,8 @@
 
 ---
 
-### Team Members & Contributors
-- **Danush Prabakaran** (GitHub: [@Danushp2307](https://github.com/Danushp2307), GatorLink ID: `danush`)
-- **vr008** (GitHub: [@vr008](https://github.com/vr008))
+### Team Members
+- **Danush** (GatorLink ID: `danush`)
 
 ---
 
@@ -188,8 +187,8 @@ Clone the repository and run worker mode pointing to the server's IP (`192.168.0
 
 ```bash
 # Clone the repository
-git clone https://github.com/Danushp2307/Erlang-.git
-cd Erlang-
+git clone https://github.com/Danushp2307/Erlang01.git
+cd Erlang01
 
 # On Windows (PowerShell / CMD):
 .\myprogram.bat 192.168.0.26
@@ -198,3 +197,4 @@ cd Erlang-
 chmod +x myprogram
 ./myprogram 192.168.0.26
 ```
+
