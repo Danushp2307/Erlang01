@@ -27,7 +27,10 @@ start_from_argument(Arg) ->
 %% Server mode: starts Boss actor and local workers
 start_server(LeadingZeros) ->
     ensure_node(server),
-    BossPid = spawn(fun() -> boss_loop(0, LeadingZeros, ?WORK_UNIT_SIZE) end),
+    BossPid = spawn(fun() ->
+        net_kernel:monitor_nodes(true),
+        boss_loop(0, LeadingZeros, ?WORK_UNIT_SIZE)
+    end),
     register(boss, BossPid),
     Cores = erlang:system_info(schedulers_online),
     spawn_workers(BossPid, Cores * 2),
@@ -41,6 +44,7 @@ start_worker(ServerIP) ->
         _       -> list_to_atom(ServerIP)
     end,
     connect_server(ServerNode, 10),
+    io:format("Worker joined the boss server (~p) and received work.~n", [ServerNode]),
     Boss = {boss, ServerNode},
     Cores = erlang:system_info(schedulers_online),
     spawn_workers(Boss, Cores * 2),
@@ -80,6 +84,14 @@ connect_server(Node, Attempts) ->
 %% Boss actor: assigns non-overlapping ranges and prints coins
 boss_loop(NextIndex, LeadingZeros, ChunkSize) ->
     receive
+        {nodeup, Node} ->
+            io:format("Worker has joined the boss server: ~p~n", [Node]),
+            boss_loop(NextIndex, LeadingZeros, ChunkSize);
+
+        {nodedown, Node} ->
+            io:format("Worker disconnected: ~p~n", [Node]),
+            boss_loop(NextIndex, LeadingZeros, ChunkSize);
+
         {get_work, WorkerPid} ->
             StartIndex = NextIndex,
             EndIndex = NextIndex + ChunkSize - 1,
