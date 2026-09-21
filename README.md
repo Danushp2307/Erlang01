@@ -1,7 +1,8 @@
 # COP5615 - Project 1: Bitcoin Mining in Erlang
 **Team Members:**
-- Danush Prabhakaran (UFID: `47244992` | GatorLink ID: `d.prabakaran`)
-- Vignesh Raj Tirupattur Subramaniam Ravichandran (UFID: `52658963` | GatorLink ID: `vigneshr.tirupat`)
+- Danush Prabhakaran (UFID: `47244992` | GatorLink ID: `d.prabakaran`|GitHub: @Danushp2307)
+- Vignesh Raj Tirupattur Subramaniam Ravichandran (UFID: `52658963` | GatorLink ID: `vigneshr.tirupat`| GitHub: @vr008)
+
 
 ---
 
@@ -134,14 +135,30 @@ We tested our distributed miner across **2 physical machines / laptops** (1 serv
 
 ## 8. How to Run
 
-### Step 1: Start Server on Machine 1 (Linux)
+### Machine 1 — Server
+
+**Linux / macOS**
+
 ```bash
-chmod +x myprogram
 ./myprogram 4
 ```
 
-### Step 2: Start Worker on Machine 2 (Linux)
-Run the program with the server's IP address:
+**Windows**
+
+```bat
+myprogram.bat 4
+```
+
+### Machine 2 — Worker
+
+**Linux / macOS**
+
 ```bash
 ./myprogram 192.168.0.13
+```
+
+**Windows**
+
+```bat
+myprogram.bat 192.168.0.26
 ```
