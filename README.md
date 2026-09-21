@@ -10,7 +10,7 @@ In this project, we implemented a distributed Bitcoin miner in Erlang using excl
 
 - **Boss Actor**: Acts as the central coordinator. It maintains the current search index and hands out non-overlapping ranges of candidate numbers (100,000 at a time) to workers. When a worker finds a coin, the Boss prints it to standard output.
 - **Worker Actors**: Each machine spawns worker actors based on available CPU cores (`erlang:system_info(schedulers_online) * 2`). Workers continuously request a range from the Boss, compute the SHA-256 hash for each candidate (`danush;<number_base36>`), and send any matching coins back to the Boss.
-- **Distributed Mode**: Remote machines connect to the server via Erlang's built-in node distribution (`net_adm:ping`). Remote workers pull work from the Boss and send found coins back to the server, producing zero output on the worker machines.
+- **Distributed Mode**: Remote machines connect to the server via Erlang's built-in node distribution (`net_adm:ping`). When a worker connects, the Boss detects the new node via `net_kernel:monitor_nodes(true)` and prints a notification (`Worker has joined the boss server: <Node>`). The worker also prints a confirmation upon connecting (`Worker joined the boss server (<ServerNode>) and received work.`), pulls work units from the Boss, and sends discovered coins back to the main server.
 
 ---
 
@@ -80,21 +80,27 @@ During an extended mining run ($K = 7$), we found the following coin with **7 le
 
 ## 6. Largest Number of Working Machines / Laptops Run On
 
-We tested our distributed miner across **5 physical laptops** (1 server + 4 remote worker nodes) over a local Wi-Fi network:
+We tested our distributed miner across **2 physical machines / laptops** (1 server + 1 remote worker node) over a local Wi-Fi network:
 
 | Machine | Role | OS | Cores | IP Address |
 | :--- | :--- | :--- | :--- | :--- |
-| **Laptop 1** | Server (Boss + Local Workers) | Linux / Windows | 16 Cores | `192.168.0.26` |
-| **Laptop 2** | Remote Worker 1 | Windows 11 | 8 Cores | `192.168.0.152` |
-| **Laptop 3** | Remote Worker 2 | Windows 11 | 8 Cores | `192.168.0.160` |
-| **Laptop 4** | Remote Worker 3 | Windows 11 | 8 Cores | `192.168.0.174` |
-| **Laptop 5** | Remote Worker 4 | macOS / Linux | 8 Cores | `192.168.0.185` |
-| **Total** | **Distributed Mining Pool** | | **48 Cores** | |
+| **Machine 1** | Server (Boss + Local Workers) | Windows 11 | 16 Cores | `192.168.0.13` |
+| **Machine 2** | Remote Worker Node | Windows 11 | 8 Cores | `192.168.0.26` |
+| **Total** | **Distributed Mining Pool** | | **24 Cores** | |
 
 ### Observations:
-1. **Dynamic Connection**: The server starts mining immediately on its local cores. When remote worker laptops join by pointing to the server's IP, the Boss starts assigning chunks to them immediately without interruption.
-2. **Silent Workers**: As required, worker machines produced zero terminal output. All coins found across all 48 cores were printed exclusively on the main server console.
-3. **Scaling**: Throughput increased from ~6.2M hashes/sec (1 laptop) to ~18.5M hashes/sec (5 laptops), demonstrating near-linear distributed scaling.
+1. **Worker Join Notification**: 
+   - When a remote worker connects to the server, the Boss server detects the node via `net_kernel:monitor_nodes(true)` and prints a join notification:
+     ```text
+     Worker has joined the boss server: 'worker_XXXXX@192.168.0.26'
+     ```
+   - On the worker machine, a confirmation message is printed once connection and initial work distribution succeed:
+     ```text
+     Worker joined the boss server ('server@192.168.0.13') and received work.
+     ```
+2. **Dynamic Work Assignment**: The server starts mining immediately on its local cores. When the remote worker joins, the Boss begins handing out chunks of 100,000 hashes to the remote worker processes dynamically without interrupting ongoing local mining.
+3. **Centralized Results**: As required, all discovered coins from both machines are transmitted to and printed exclusively on the main server console.
+4. **Throughput Scaling**: Throughput scaled effectively from single-machine mining (~6.2M hashes/sec) to dual-machine mining (~9.8M hashes/sec), keeping all 24 logical cores fully saturated.
 
 ---
 
@@ -110,12 +116,12 @@ chmod +x myprogram
 .\myprogram.bat 4
 ```
 
-### Step 2: Start Workers on Remote Machines
+### Step 2: Start Worker on Machine 2
 Run the program with the server's IP address:
 ```bash
 # On Linux / macOS:
-./myprogram 192.168.0.26
+./myprogram 192.168.0.13
 
 # On Windows:
-.\myprogram.bat 192.168.0.26
+.\myprogram.bat 192.168.0.13
 ```
