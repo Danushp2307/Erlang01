@@ -64,17 +64,22 @@ vigneshr.tirupat;9YYRZ	000007575e3ee58e1857e4553ce869830258d4b3a75bc13f1dd3f8b73
 ```
 
 *(Output strictly matches the required `<InputString>\t<SHA-256>` format).*
-
 ---
-## 4. Results for Input 4 ($K = 4$)
-Boss
+
+## 4. Screenshots - Boss Terminal
+
+**Boss Terminal (Server – `192.168.0.13`, Linux Ubuntu):**
+
 <img width="678" height="292" alt="boss" src="https://github.com/user-attachments/assets/bc8dbbf8-73f0-42fc-affa-1d2f84bc05a2" />
 
+**Worker Terminal (Remote Machine, Mac):**
 
-<img width="1106" height="188" alt="image" src="https://github.com/user-attachments/assets/19808caf-3df1-4864-a05a-ba34ccffa390" />
+<img width="1106" height="188" alt="worker" src="https://github.com/user-attachments/assets/19808caf-3df1-4864-a05a-ba34ccffa390" />
 
+---
 
 ## 5. Running Time & CPU-to-Real-Time Ratio
+
 
 We measured execution time using the system `time` command while mining for $K = 4$ for approximately 60 seconds on a 16-core machine:
 
@@ -107,7 +112,7 @@ We tested our distributed miner across **2 physical machines / laptops** (1 serv
 
 | Machine | Role | OS | Cores | IP Address |
 | :--- | :--- | :--- | :--- | :--- |
-| **Machine 1** | Server (Boss + Local Workers) | Windows 11 | 16 Cores | `192.168.0.13` |
+| **Machine 1** | Server (Boss + Local Workers) | Linux (Ubuntu) | 16 Cores | `192.168.0.13` |
 | **Machine 2** | Remote Worker Node | Windows 11 | 8 Cores | `192.168.0.26` |
 | **Total** | **Distributed Mining Pool** | | **24 Cores** | |
 
@@ -129,22 +134,14 @@ We tested our distributed miner across **2 physical machines / laptops** (1 serv
 
 ## 8. How to Run
 
-### Step 1: Start Server on Machine 1
+### Step 1: Start Server on Machine 1 (Linux)
 ```bash
-# On Linux / macOS:
 chmod +x myprogram
 ./myprogram 4
-
-# On Windows:
-.\myprogram.bat 4
 ```
 
-### Step 2: Start Worker on Machine 2
+### Step 2: Start Worker on Machine 2 (Linux)
 Run the program with the server's IP address:
 ```bash
-# On Linux / macOS:
 ./myprogram 192.168.0.13
-
-# On Windows:
-.\myprogram.bat 192.168.0.13
 ```
