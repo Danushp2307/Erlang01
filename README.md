@@ -1,7 +1,7 @@
 # COP5615 - Project 1: Bitcoin Mining in Erlang
 **Team Members:**
-- Danush (GatorLink ID: `danush`)
-- Vignesh Raj (GatorLink ID: `vignesh`)
+- Danush Prabhakaran (UFID: `47244992` | GatorLink ID: `d.prabakaran`)
+- Vignesh Raj Tirupattur Subramaniam Ravichandran (UFID: `52658963` | GatorLink ID: `vigneshr.tirupat`)
 
 ---
 
@@ -9,7 +9,7 @@
 In this project, we implemented a distributed Bitcoin miner in Erlang using exclusively the **Actor Model**.
 
 - **Boss Actor**: Acts as the central coordinator. It maintains the current search index and hands out non-overlapping ranges of candidate numbers (100,000 at a time) to workers. When a worker finds a coin, the Boss prints it to standard output.
-- **Worker Actors**: Each machine spawns worker actors based on available CPU cores (`erlang:system_info(schedulers_online) * 2`). Workers continuously request a range from the Boss, compute the SHA-256 hash for each candidate (`danush;<number_base36>`), and send any matching coins back to the Boss.
+- **Worker Actors**: Each machine spawns worker actors based on available CPU cores (`erlang:system_info(schedulers_online) * 2`). Workers continuously request a range from the Boss, compute the SHA-256 hash for each candidate (`d.prabakaran;<number_base36>`), and send any matching coins back to the Boss.
 - **Distributed Mode**: Remote machines connect to the server via Erlang's built-in node distribution (`net_adm:ping`). When a worker connects, the Boss detects the new node via `net_kernel:monitor_nodes(true)` and prints a notification (`Worker has joined the boss server: <Node>`). The worker also prints a confirmation upon connecting (`Worker joined the boss server (<ServerNode>) and received work.`), pulls work units from the Boss, and sends discovered coins back to the main server.
 
 ---
@@ -35,21 +35,35 @@ We tested different chunk sizes on our multi-core machine to see which size gave
 
 ## 3. Results for Input 4 ($K = 4$)
 
-Running `./myprogram 4` prints coins with at least 4 leading zeros in the SHA-256 hash:
+Running `./myprogram 4` prints coins with at least 4 leading zeros in the SHA-256 hash. Below are verified results shown separately for both team members:
+The code uses `d.prabakaran` as the GatorLink ID prefix (`-define(GATOR_ID, "d.prabakaran").`). During our experimentation, we also tested and verified mining with both team members' GatorLink IDs (`d.prabakaran` and `vigneshr.tirupat`).
 
+### Coins Found for Danush (`d.prabakaran`):
+Running `./myprogram 4` prints coins with at least 4 leading zeros in the SHA-256 hash. Below are verified results:
+
+### Coins Found for Danush (`d.prabakaran`) [Default in Code]:
 ```text
-danush;1JYVQ	00000ac3b7e8a88f5c4780ce2c12ae677697f4e59240c64103ef7d44126a64f2
-danush;10HO6	000028e3ec5ddfc4f25db0893b908a40e2b85ae3d717bf619b896f7e82341637
-danush;1HZ4A	0000547b51396f7e7b46ca4c9546cc597990ed540e3c53a33da7bdce6d6c4bfb
-danush;1UI8E	000064c6be5e28d3def848b12c7195a6602743bbf0e0869110d0837996a9e2ed
-danush;W837	00004c319ef6e0a972821e60575cea4e7a6a47c80927035ee9f1a13bbf297c69
-danush;1DQ87	0000507dc4218da5733b912fd79b0d61061915799e7014373b7e4dada88a4660
-danush;JDX2	0000e2617668dc09bc482a4bec002590ebf5d5f831203146cdf1d3711918101b
-danush;1LYYE	0000c0b7a9d2aa41ab62fcd4566a9f1bf7b01977087b86e8fd88f14583f97db8
-danush;1SXSR	00006a30f97ddf19f1330d9ec55c47e067e4c617ceeffecfada52f7aa50b9a2a
-danush;17E7I	000095309669724ecfa8421a023515d9b6c82fdca8b8bfd71fedc4b182d8fa66
-danush;T1N4	0000fbde5cf14fdef31a3d670448405a65cd6e93222ff9efe19323416c77ac0d
-danush;1LIO2	0000126fc45098628d332e28ab4b21a0c9c574df0ecae00615042813738b90b8
+d.prabakaran;CU7XW	00001eeab5e6f6bfeed2171491a23a74387bb39736334f80c4e52e9b5ef32f6a
+d.prabakaran;CM97A	000098ce82474d0ef81534c1a972cae09dea75797fbe78ede7c75f304a8df430
+d.prabakaran;DALHW	00004f38011fe0449c726fb7eeab2bebb800778c3fce10fef4f04b0b4e256b28
+d.prabakaran;CWHLS	00008a08b7200bb83f8db2445f4ed6a066f47586d65ad7195fa4d9acd3eb24bc
+d.prabakaran;DJ7J4	0000ce8fa5164a975b7c08d2d3f8cd79f57fc0da6111946f5849c5b33b7be42f
+d.prabakaran;9K4XI	000037c8f5a2e3669387c9f4f3735625ae0943cb8dd77823ce06489df46e566d
+d.prabakaran;A2PNC	0000eebdbf8b402200af641e23390d4e5add9bee0bb1e0effd75a320f101b490
+d.prabakaran;A718I	00002fc1f07161334d87334339ec25620314000081b14951e06d0fa915d49bec
+```
+
+### Coins Found for Vignesh Raj (`vigneshr.tirupat`):
+### Coins Found when Tested with Vignesh Raj (`vigneshr.tirupat`):
+```text
+vigneshr.tirupat;DAFR9	0000a2c0846486a78fa69cbe077a6eb150e9477cd605d976140e1b3c964d1a1c
+vigneshr.tirupat;CD25Z	00008b0a456b65305e798e5931d3e0270937dac1ac4200fe8c6836260f6a19ca
+vigneshr.tirupat;D0CUL	00004caadc58f47a23f5b0bb343aabdab469dbf7d873ec16de2c029e19594e2a
+vigneshr.tirupat;C0VY7	0000f89c05e8682c1bc5f60dff6e36a8eb40ecd5d58a0184462b77d2380a8d6f
+vigneshr.tirupat;D6F83	00008e8166f6338567c1d2c65843518e86811f02682814ae24a434715e8811e1
+vigneshr.tirupat;D0EZX	0000ba4aad9c482f50e4dd8403cb0f9c8b5119e550fb73bd88277c0ec1d9fa54
+vigneshr.tirupat;9WXSN	000044d2c4bf223a01f600644bc86e875911b644e74020ad1fb85e1c7de2153d
+vigneshr.tirupat;9YYRZ	000007575e3ee58e1857e4553ce869830258d4b3a75bc13f1dd3f8b73b8390e8
 ```
 
 *(Output strictly matches the required `<InputString>\t<SHA-256>` format).*
@@ -71,10 +85,17 @@ The ratio of **15.55** on a 16-core CPU shows that all 16 cores were computing i
 
 ## 5. Coin with the Most Zeros Found
 
-During an extended mining run ($K = 7$), we found the following coin with **7 leading zeros**:
+During extended mining runs, we found coins with 5 and 6 leading zeros:
 
-- **Input String:** `danush;1B9F7X`
-- **SHA-256 Hash:** `00000009c5b29381e9f45610e6a39281a1796fcda401b38f8373bc0768e1fa92`
+- **Danush Prabhakaran (`d.prabakaran`):**
+- **Danush Prabhakaran (`d.prabakaran`) [Default in Code]:**
+  - **Input String:** `d.prabakaran;LUS4J`
+  - **SHA-256 Hash:** `000000164c8c1f2074984ef934554dd7366061d01b3d31553bb0417875b5ab46` (6 leading zeros)
+
+- **Vignesh Raj Tirupattur Subramaniam Ravichandran (`vigneshr.tirupat`):**
+- **Vignesh Raj Tirupattur Subramaniam Ravichandran (`vigneshr.tirupat`) [Tested]:**
+  - **Input String:** `vigneshr.tirupat;9YYRZ`
+  - **SHA-256 Hash:** `000007575e3ee58e1857e4553ce869830258d4b3a75bc13f1dd3f8b73b8390e8` (5 leading zeros)
 
 ---
 
