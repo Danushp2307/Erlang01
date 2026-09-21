@@ -30,10 +30,8 @@ if [ ! -f "$DIR/project1.beam" ]; then
 fi
 
 if [[ "$1" =~ ^[0-9]+$ ]]; then
-    echo "[Starting Main Server Node on $LOCAL_IP with K=$1...]"
     erl -name "server@$LOCAL_IP" -setcookie cop5615_cookie -noshell -pa "$DIR" -s project1 main "$@"
 else
     RAND_ID=$((RANDOM % 90000 + 10000))
-    echo "[Starting Worker Node connecting to server at $1...]"
     erl -name "worker_${RAND_ID}@$LOCAL_IP" -setcookie cop5615_cookie -noshell -pa "$DIR" -s project1 main "$@"
 fi

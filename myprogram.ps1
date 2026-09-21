@@ -6,9 +6,16 @@
 # ===================================================================
 
 param(
-    [Parameter(Position=0, Mandatory=$true)]
+    [Parameter(Position=0, Mandatory=$false)]
     [string]$Target
 )
+
+if ([string]::IsNullOrWhiteSpace($Target)) {
+    Write-Host "Usage:"
+    Write-Host "  Server Mode: .\myprogram.bat <LeadingZeros>   [e.g. .\myprogram.bat 4]"
+    Write-Host "  Worker Mode: .\myprogram.bat <ServerIP>       [e.g. .\myprogram.bat 192.168.0.26]"
+    exit 1
+}
 
 # Ensure Erlang OTP is in PATH
 $erlPath = "C:\Program Files\Erlang OTP\bin"
