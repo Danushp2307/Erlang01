@@ -66,8 +66,15 @@ vigneshr.tirupat;9YYRZ	000007575e3ee58e1857e4553ce869830258d4b3a75bc13f1dd3f8b73
 *(Output strictly matches the required `<InputString>\t<SHA-256>` format).*
 
 ---
+## 4. Results for Input 4 ($K = 4$)
+Boss
+<img width="678" height="292" alt="boss" src="https://github.com/user-attachments/assets/bc8dbbf8-73f0-42fc-affa-1d2f84bc05a2" />
 
-## 4. Running Time & CPU-to-Real-Time Ratio
+
+<img width="1106" height="188" alt="image" src="https://github.com/user-attachments/assets/19808caf-3df1-4864-a05a-ba34ccffa390" />
+
+
+## 5. Running Time & CPU-to-Real-Time Ratio
 
 We measured execution time using the system `time` command while mining for $K = 4$ for approximately 60 seconds on a 16-core machine:
 
@@ -80,7 +87,7 @@ The ratio of **15.55** on a 16-core CPU shows that all 16 cores were computing i
 
 ---
 
-## 5. Coin with the Most Zeros Found
+## 6. Coin with the Most Zeros Found
 
 During extended mining runs, we found coins with 5 and 6 leading zeros:
 
@@ -94,7 +101,7 @@ During extended mining runs, we found coins with 5 and 6 leading zeros:
 
 ---
 
-## 6. Largest Number of Working Machines / Laptops Run On
+## 7. Largest Number of Working Machines / Laptops Run On
 
 We tested our distributed miner across **2 physical machines / laptops** (1 server + 1 remote worker node) over a local Wi-Fi network:
 
@@ -120,7 +127,7 @@ We tested our distributed miner across **2 physical machines / laptops** (1 serv
 
 ---
 
-## 7. How to Run
+## 8. How to Run
 
 ### Step 1: Start Server on Machine 1
 ```bash
