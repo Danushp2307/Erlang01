@@ -35,10 +35,8 @@ We tested different chunk sizes on our multi-core machine to see which size gave
 
 ## 3. Results for Input 4 ($K = 4$)
 
-Running `./myprogram 4` prints coins with at least 4 leading zeros in the SHA-256 hash. Below are verified results shown separately for both team members:
 The code uses `d.prabakaran` as the GatorLink ID prefix (`-define(GATOR_ID, "d.prabakaran").`). During our experimentation, we also tested and verified mining with both team members' GatorLink IDs (`d.prabakaran` and `vigneshr.tirupat`).
 
-### Coins Found for Danush (`d.prabakaran`):
 Running `./myprogram 4` prints coins with at least 4 leading zeros in the SHA-256 hash. Below are verified results:
 
 ### Coins Found for Danush (`d.prabakaran`) [Default in Code]:
@@ -53,7 +51,6 @@ d.prabakaran;A2PNC	0000eebdbf8b402200af641e23390d4e5add9bee0bb1e0effd75a320f101b
 d.prabakaran;A718I	00002fc1f07161334d87334339ec25620314000081b14951e06d0fa915d49bec
 ```
 
-### Coins Found for Vignesh Raj (`vigneshr.tirupat`):
 ### Coins Found when Tested with Vignesh Raj (`vigneshr.tirupat`):
 ```text
 vigneshr.tirupat;DAFR9	0000a2c0846486a78fa69cbe077a6eb150e9477cd605d976140e1b3c964d1a1c
@@ -87,12 +84,10 @@ The ratio of **15.55** on a 16-core CPU shows that all 16 cores were computing i
 
 During extended mining runs, we found coins with 5 and 6 leading zeros:
 
-- **Danush Prabhakaran (`d.prabakaran`):**
 - **Danush Prabhakaran (`d.prabakaran`) [Default in Code]:**
   - **Input String:** `d.prabakaran;LUS4J`
   - **SHA-256 Hash:** `000000164c8c1f2074984ef934554dd7366061d01b3d31553bb0417875b5ab46` (6 leading zeros)
 
-- **Vignesh Raj Tirupattur Subramaniam Ravichandran (`vigneshr.tirupat`):**
 - **Vignesh Raj Tirupattur Subramaniam Ravichandran (`vigneshr.tirupat`) [Tested]:**
   - **Input String:** `vigneshr.tirupat;9YYRZ`
   - **SHA-256 Hash:** `000007575e3ee58e1857e4553ce869830258d4b3a75bc13f1dd3f8b73b8390e8` (5 leading zeros)

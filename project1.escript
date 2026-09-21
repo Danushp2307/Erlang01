@@ -4,7 +4,7 @@
 
 %% COP5615 Project 1 - Distributed Bitcoin Miner (Danush & Vignesh Raj)
 
--define(GATOR_ID, "danush").
+-define(GATOR_ID, "d.prabakaran").
 -define(WORK_UNIT_SIZE, 100000). %% 100k hashes per request
 -define(COOKIE, 'cop5615_cookie').
 

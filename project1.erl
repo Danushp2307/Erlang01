@@ -2,7 +2,7 @@
 -module(project1).
 -export([main/1, start_server/1, start_worker/1, boss_loop/3, worker_loop/1]).
 
--define(GATOR_ID, "danush").
+-define(GATOR_ID, "d.prabakaran").
 -define(WORK_UNIT_SIZE, 100000). %% 100k hashes per request
 -define(COOKIE, 'cop5615_cookie').
 
