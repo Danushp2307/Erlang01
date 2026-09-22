@@ -135,30 +135,22 @@ We tested our distributed miner across **2 physical machines / laptops** (1 serv
 
 ## 8. How to Run
 
-### Machine 1 — Server
 
-**Linux / macOS**
-
+### Step 1: Start Server on Machine 1
 ```bash
+# On Linux / macOS:
+chmod +x myprogram
 ./myprogram 4
+
+# On Windows:
+.\myprogram.bat 4
 ```
 
-**Windows**
-
-```bat
-myprogram.bat 4
-```
-
-### Machine 2 — Worker
-
-**Linux / macOS**
-
+### Step 2: Start Worker on Machine 2
+Run the program with the server's IP address:
 ```bash
+# On Linux / macOS:
 ./myprogram 192.168.0.13
-```
 
-**Windows**
-
-```bat
-myprogram.bat 192.168.0.26
-```
+# On Windows:
+.\myprogram.bat 192.168.0.26
