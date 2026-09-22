@@ -150,6 +150,7 @@ chmod +x myprogram
 Run the program with the server's IP address:
 ```bash
 # On Linux / macOS:
+chmod +x myprogram
 ./myprogram 192.168.0.13
 
 # On Windows:
